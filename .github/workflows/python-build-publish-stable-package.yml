@@ -1,6 +1,6 @@
 # This workflow builds and uploads python artifacts
 
-name: Build and Publish Python Development Package
+name: Build and Publish Python Stable Package
 on:
   workflow_call:
     inputs:
@@ -23,9 +23,9 @@ jobs:
     with:
       package-name: ${{ inputs.package-name }}
       python-version: 3.12
-      tag-regex: ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
-      stable-version: false
-      env-name: Development
+      tag-regex: ^v[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$
+      stable-version: true
+      env-name: Production
     secrets:
       token: ${{ secrets.token }}
       pypi_token: ${{ secrets.pypi_token }}
