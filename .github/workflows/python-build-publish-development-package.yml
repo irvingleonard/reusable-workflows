@@ -13,12 +13,6 @@ on:
       pypi_token:
         required: true
 
-env:
-  ENV_NAME: Development
-  PYTHON_VERSION: 3.12
-  TAG_REGEX: ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
-  TEST_PYPI_URL: https://test.pypi.org/legacy/
-
 jobs:
   build-package:
     permissions:
@@ -28,11 +22,11 @@ jobs:
     uses: irvingleonard/reusable-workflows/.github/workflows/python-build-publish-package.yml@v0.0.1
     with:
       package-name: ${{ inputs.package-name }}
-      python-version: ${{ env.PYTHON_VERSION }}
-      tag-regex: ${{ env.TAG_REGEX }}
+      python-version: 3.12
+      tag-regex: ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
       stable-version: false
-      env-name: ${{ env.ENV_NAME }}
-      pypi-url: ${{ env.TEST_PYPI_URL }}
+      env-name: Development
+      pypi-url: https://test.pypi.org/legacy/
     secrets:
       token: ${{ secrets.token }}
       pypi_token: ${{ secrets.pypi_token }}
