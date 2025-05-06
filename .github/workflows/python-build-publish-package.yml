@@ -12,14 +12,9 @@ on:
         required: true
         type: string
       stable-version:
-        required: false
+        required: true
         type: boolean
-        default: false
       env-name:
-        required: false
-        type: string
-        default: Development
-      pypi-url:
         required: true
         type: string
     secrets:
@@ -129,8 +124,15 @@ jobs:
           files: dist/*
           prerelease: true
 
-      - name: Publish package distributions to PyPI
+      - name: Publish package distributions to TestPyPI
+        if: github.event.inputs.stable-version == false
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ inputs.pypi-url }}
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.pypi_token }}
+
+      - name: Publish package distributions to PyPI
+        if: github.event.inputs.stable-version == true
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
           password: ${{ secrets.pypi_token }}
