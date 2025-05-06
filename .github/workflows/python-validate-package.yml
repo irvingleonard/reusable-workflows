@@ -1,6 +1,6 @@
 # Workflow to validate python packages
 
-name: Validate Python package
+name: Validate Python Package
 on:
   workflow_call:
     inputs:
