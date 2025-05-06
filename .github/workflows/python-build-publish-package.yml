@@ -125,14 +125,14 @@ jobs:
           prerelease: true
 
       - name: Publish package distributions to TestPyPI
-        if: github.event.inputs.stable-version == false
+        if: inputs.stable-version == false
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           password: ${{ secrets.pypi_token }}
 
       - name: Publish package distributions to PyPI
-        if: github.event.inputs.stable-version == true
+        if: inputs.stable-version == true
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.pypi_token }}
