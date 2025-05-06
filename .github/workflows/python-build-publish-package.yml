@@ -86,7 +86,7 @@ jobs:
       tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
       release_found: ${{ steps.get_release.outputs.id }}
 
-  build:
+  build-n-publish:
     needs: create-tag
     if: needs.create-tag.outputs.release_found == null && needs.create-tag.outputs.valid_version == 'true'
     permissions:
