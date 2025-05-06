@@ -18,9 +18,9 @@ on:
         required: true
         type: string
     secrets:
-      token:
+      github-token:
         required: true
-      pypi_token:
+      pypi-token:
         required: true
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
       - name: Get Python Package Version
         id: get_package_version
         run: |
-          echo "PACKAGE_VERSION=v"`./venv/bin/python3 -m ${{ inputs.package-name}} --version` >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=v"`./venv/bin/python3 -m ${{ inputs.package-name }} --version` >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Check if Tag is Valid
@@ -76,7 +76,7 @@ jobs:
         id: get_release
         uses: cardinalby/git-get-release-action@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.token }}
+          GITHUB_TOKEN: ${{ secrets.github-token }}
         with:
           tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
           doNotFailIfNotFound: true
@@ -129,10 +129,10 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.pypi_token }}
+          password: ${{ secrets.pypi-token }}
 
       - name: Publish package distributions to PyPI
         if: inputs.stable-version == true
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.pypi_token }}
+          password: ${{ secrets.pypi-token }}
