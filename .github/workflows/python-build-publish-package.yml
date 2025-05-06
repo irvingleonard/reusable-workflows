@@ -1,18 +1,32 @@
-name: Build and Publish Development Package
+name: Build and Publish Python Package
 on:
   workflow_call:
     inputs:
       package-name:
         required: true
         type: string
+      python-version:
+        required: true
+        type: string
+      tag-regex:
+        required: true
+        type: string
+      stable-version:
+        required: false
+        type: boolean
+        default: false
+      env-name:
+        required: false
+        type: string
+        default: Development
+      pypi-url:
+        required: true
+        type: string
     secrets:
       token:
         required: true
-
-env:
-  PYTHON_VERSION: 3.12
-  TAG_REGEX: ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
-  TEST_PYPI_URL: https://test.pypi.org/legacy/
+      pypi_token:
+        required: true
 
 jobs:
   create-tag:
@@ -21,15 +35,15 @@ jobs:
       contents: write
       id-token: write
       actions: write
-    environment: Development
+    environment: ${{ inputs.env-name}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python ${{ inputs.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ inputs.python-version }}
 
       - name: Provision Virtual Environment (including updated pip and dependencies)
         run: |
@@ -45,7 +59,7 @@ jobs:
       - name: Check if Tag is Valid
         id: check-tag
         run: |
-          if [[ ! ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} =~ ${{env.TAG_REGEX}} ]]; then
+          if [[ ! ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} =~ ${{ inputs.tag-regex }} ]]; then
             echo "Version found: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} is not a valid semver number for this environment"
             else 
             echo "Version found: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} is a valid semver number for this environment"
@@ -67,9 +81,9 @@ jobs:
         id: get_release
         uses: cardinalby/git-get-release-action@v1
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.token }}
         with:
-          tag: ${{steps.get_package_version.outputs.PACKAGE_VERSION}}
+          tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
           doNotFailIfNotFound: true
 
     outputs:
@@ -77,22 +91,22 @@ jobs:
       tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
       release_found: ${{ steps.get_release.outputs.id }}
 
-  deploy:
+  build:
     needs: create-tag
     if: needs.create-tag.outputs.release_found == null && needs.create-tag.outputs.valid_version == 'true'
     permissions:
       contents: write
       id-token: write
     runs-on: ubuntu-latest
-    environment: Development
+    environment: ${{ inputs.env-name}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
+      - name: Set up Python ${{ inputs.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ inputs.python-version }}
 
       - name: Provision Virtual Environment (including updated pip and dependencies)
         run: |
@@ -111,11 +125,12 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{needs.create-tag.outputs.tag}}
+          tag_name: ${{ needs.create-tag.outputs.tag }}
           files: dist/*
           prerelease: true
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ env.TEST_PYPI_URL }}
+          repository-url: ${{ inputs.pypi-url }}
+          password: ${{ secrets.pypi_token }}
