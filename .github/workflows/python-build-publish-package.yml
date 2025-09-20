@@ -20,8 +20,6 @@ on:
     secrets:
       github-token:
         required: true
-      pypi-token:
-        required: true
 
 jobs:
   python-package-get-version:
