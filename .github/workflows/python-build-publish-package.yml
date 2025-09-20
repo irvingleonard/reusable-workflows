@@ -22,28 +22,38 @@ on:
         required: true
 
 jobs:
-  python-package-get-version:
-    uses: irvingleonard/reusable-workflows/.github/workflows/python-package-get-version.yml@v1
+  prepare-source:
+    uses: irvingleonard/reusable-workflows/.github/workflows/python-prepare-source.yml@v1
     with:
-      package-name: ${{ inputs.package-name }}
       python-version: ${{ inputs.python-version }}
 
   create-tag:
     runs-on: ubuntu-latest
-    needs: python-package-get-version
+    needs: prepare-source
     permissions:
       actions: write
       contents: write
       id-token: write
     environment: ${{ inputs.env-name}}
     steps:
+      - name: Getting Source
+        uses: actions/download-artifact@v5
+        with:
+          name: source
+
+      - name: Get Python Package Version
+        id: get_package_version
+        run: |
+          echo "PACKAGE_VERSION=v"`./venv/bin/python -m ${{ inputs.package-name }} --version` >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
       - name: Check if Tag is Valid
         id: check-tag
         run: |
-          if [[ ! ${{ needs.python-package-get-version.outputs.package_version }} =~ ${{ inputs.tag-regex }} ]]; then
-            echo "Version found: ${{ needs.python-package-get-version.outputs.package_version }} is not a valid value for this environment"
+          if [[ ! ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} =~ ${{ inputs.tag-regex }} ]]; then
+            echo "Version found: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} is not a valid value for this environment"
             else 
-            echo "Version found: ${{ needs.python-package-get-version.outputs.package_version }} is a valid value for this environment"
+            echo "Version found: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} is a valid value for this environment"
             echo "VALID_VERSION=true" >> $GITHUB_OUTPUT
           fi
 
@@ -52,7 +62,7 @@ jobs:
         if: steps.check-tag.outputs.VALID_VERSION == true
         continue-on-error: true
         env:
-          TAG: ${{ needs.python-package-get-version.outputs.package_version  }}
+          TAG: ${{ steps.get_package_version.outputs.PACKAGE_VERSION  }}
         run: |
           git tag ${{ env.TAG }}
           git push origin ${{ env.TAG }}
@@ -64,12 +74,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.github-token }}
         with:
-          tag: ${{ needs.python-package-get-version.outputs.package_version }}
+          tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
           doNotFailIfNotFound: true
 
     outputs:
       valid_version: ${{ steps.check-tag.outputs.VALID_VERSION }}
-      tag: ${{ needs.python-package-get-version.outputs.package_version }}
+      tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
       release_found: ${{ steps.get_release.outputs.id }}
 
   build-n-publish:
@@ -81,27 +91,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.env-name}}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v6
+      - name: Getting Source
+        uses: actions/download-artifact@v5
         with:
-          python-version: ${{ inputs.python-version }}
-
-      - name: Install Devautotools
-        run: |
-          python3 -m venv venv_devautotools
-          ./venv_devautotools/bin/pip install --upgrade pip
-          ./venv_devautotools/bin/pip install --upgrade devautotools
-
-      - name: Deploy Local Virtual Environment
-        run: |
-          ./venv_devautotools/bin/python -m devautotools deploy_local_venv
-
-      - name: Install Test Coverage Python Modules
-        run: |
-          ./venv/bin/pip install --upgrade coverage
+          name: source
 
       - name: Install Build Module
         run: |
@@ -126,12 +119,8 @@ jobs:
           tag_name: ${{ needs.create-tag.outputs.tag }}
           files: dist/*
 
-      - name: Publish package distributions to TestPyPI
-        if: inputs.stable-version != true
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Store as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          repository-url: https://test.pypi.org/legacy/
-
-      - name: Publish package distributions to PyPI
-        if: inputs.stable-version == true
-        uses: pypa/gh-action-pypi-publish@release/v1
+          name: build
+          path: ./

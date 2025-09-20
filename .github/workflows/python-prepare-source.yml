@@ -1,0 +1,38 @@
+# Workflow to prepare the base source tree
+
+name: Prepare Python Source
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: 3.12
+
+jobs:
+  prepare-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install Devautotools
+        run: |
+          python3 -m venv venv_devautotools
+          ./venv_devautotools/bin/pip install --upgrade pip
+          ./venv_devautotools/bin/pip install --upgrade devautotools
+
+      - name: Deploy Local Virtual Environment
+        run: |
+          ./venv_devautotools/bin/python -m devautotools deploy_local_venv
+
+      - name: Store as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: ./
