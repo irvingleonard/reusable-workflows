@@ -1,4 +1,4 @@
-# This workflow builds and uploads python artifacts
+# This workflow builds and uploads stable python artifacts
 
 name: Build and Publish Python Stable Package
 on:
@@ -7,11 +7,18 @@ on:
       package-name:
         required: true
         type: string
+      python-version:
+        required: false
+        type: string
+        default: 3.12
     secrets:
       github-token:
         required: true
       pypi-token:
         required: true
+
+env:
+  VALID_TAG_REGEX: ^v[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$
 
 jobs:
   stable-package:
@@ -22,8 +29,8 @@ jobs:
     uses: irvingleonard/reusable-workflows/.github/workflows/python-build-publish-package.yml@v1
     with:
       package-name: ${{ inputs.package-name }}
-      python-version: 3.12
-      tag-regex: ^v[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$
+      python-version: ${{ inputs.python-version }}
+      tag-regex: ${{ env.VALID_TAG_REGEX }}
       stable-version: true
       env-name: Production
     secrets:
