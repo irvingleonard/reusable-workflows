@@ -20,42 +20,29 @@ env:
   STATUS_CHECK_NAME: Valid Python package
 
 jobs:
-  validate-python-package:
+  python-package-get-version:
+    uses: irvingleonard/reusable-workflows/.github/workflows/python-package-get-version.yml@v1
+    with:
+      package-name: ${{ inputs.package-name }}
+      python-version: ${{ inputs.python-version }}
+
+  validate-version:
     runs-on: ubuntu-latest
+    needs: python-package-get-version
     permissions:
-      id-token: write
-      contents: write
       actions: write
+      contents: write
+      id-token: write
       statuses: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ inputs.python-version }}
-
-      - name: Provision Virtual Environment (including updated pip and dependencies)
-        run: |
-          python3 -m pip install devautotools
-          python3 -m devautotools deploy_local_venv
-          ./venv/bin/pip install --upgrade coverage
-
-      - name: Get Python Package Version
-        id: get_package_version
-        run: |
-          echo "PACKAGE_VERSION=v"`./venv/bin/python3 -m ${{ inputs.package-name }} --version` >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
-
       - name: Check if Version is Valid
         id: check_version
         run: |
-          if [[ ! ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} =~ ${{ env.ALL_VALID_TAGS_REGEX }} ]]; then
+          if [[ ! ${{ needs.python-package-get-version.outputs.package_version }} =~ ${{ env.ALL_VALID_TAGS_REGEX }} ]]; then
             echo "INVALID_TAG=True" >> $GITHUB_OUTPUT
-            echo "Version found: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} is not a valid semver version number";
+            echo "Version found: ${{ needs.python-package-get-version.outputs.package_version }} is not a valid semantic version number";
           else 
-            echo "Version found: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }} is a valid semver version number"
+            echo "Version found: ${{ needs.python-package-get-version.outputs.package_version }} is a valid semantic version number"
           fi
 
       - name: Set Failure Status for Invalid Version
@@ -65,20 +52,20 @@ jobs:
           token: ${{ secrets.github-token }}
           status: "failure"
           context: ${{ env.STATUS_CHECK_NAME}}
-          description: "Invalid Version: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}"
+          description: "Invalid Version: ${{ needs.python-package-get-version.outputs.package_version }}"
 
       - name: Exit if Version is Invalid
         if: steps.check_version.outputs.INVALID_TAG != null
         run: exit 1
 
       - name: Get Release for Version (Tag)
-        if: steps.get_package_version.outputs.PACKAGE_VERSION
+        if: needs.python-package-get-version.outputs.package_version
         id: get_release
         uses: irvingleonard/github-action-git-get-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.github-token }}
         with:
-          tag: ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}
+          tag: ${{ needs.python-package-get-version.outputs.package_version }}
           doNotFailIfNotFound: true
 
       - name: Set Failure Status for Release Already Found
@@ -88,11 +75,42 @@ jobs:
           token: ${{ secrets.github-token }}
           status: "failure"
           context: ${{ env.STATUS_CHECK_NAME }}
-          description: "Release already created for ${{ steps.get_package_version.outputs.PACKAGE_VERSION }}"
+          description: "Release already created for ${{ needs.python-package-get-version.outputs.package_version }}"
 
       - name: Exit if Release Already Found
         if: steps.get_release.outputs.id != null
         run: exit 1
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: validate-version
+    permissions:
+      actions: write
+      contents: write
+      id-token: write
+      statuses: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install Devautotools
+        run: |
+          python3 -m venv venv_devautotools
+          ./venv_devautotools/bin/pip install --upgrade pip
+          ./venv_devautotools/bin/pip install --upgrade devautotools
+
+      - name: Deploy Local Virtual Environment
+        run: |
+          ./venv_devautotools/bin/python -m devautotools deploy_local_venv
+
+      - name: Install Test Coverage Python Modules
+        run: |
+          ./venv/bin/pip install --upgrade coverage
 
       - name: Run Tests
         id: tests
