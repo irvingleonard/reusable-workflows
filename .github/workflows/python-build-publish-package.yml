@@ -133,10 +133,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.pypi-token }}
 
       - name: Publish package distributions to PyPI
         if: inputs.stable-version == true
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.pypi-token }}

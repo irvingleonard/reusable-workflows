@@ -14,8 +14,6 @@ on:
     secrets:
       github-token:
         required: true
-      pypi-token:
-        required: true
 
 jobs:
   stable-package:
@@ -32,4 +30,3 @@ jobs:
       env-name: Production
     secrets:
       github-token: ${{ secrets.github-token }}
-      pypi-token: ${{ secrets.pypi-token }}
