@@ -17,9 +17,6 @@ on:
       pypi-token:
         required: true
 
-env:
-  VALID_TAG_REGEX: ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
-
 jobs:
   development-package:
     permissions:
@@ -30,7 +27,7 @@ jobs:
     with:
       package-name: ${{ inputs.package-name }}
       python-version: ${{ inputs.python-version }}
-      tag-regex: ${{ env.VALID_TAG_REGEX }}
+      tag-regex: ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
       stable-version: false
       env-name: Development
     secrets:
