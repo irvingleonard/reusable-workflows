@@ -43,11 +43,6 @@ jobs:
         run: |
           tar -xf source.tar
 
-      - name: Debugging
-        run: |
-          ./venv/bin/python --version
-          ./venv/bin/python -m ${{ inputs.package-name }} --help
-
       - name: Get Python Package Version
         id: get_package_version
         run: |
@@ -108,6 +103,15 @@ jobs:
       id-token: write
       statuses: write
     steps:
+      - name: Getting Source
+        uses: actions/download-artifact@v5
+        with:
+          name: source
+
+      - name: Extracting from the Tar file
+        run: |
+          tar -xf source.tar
+
       - name: Install Test Coverage Python Modules
         run: |
           ./venv/bin/pip install --upgrade coverage

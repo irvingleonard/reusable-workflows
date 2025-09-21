@@ -41,6 +41,10 @@ jobs:
         with:
           name: source
 
+      - name: Extracting from the Tar file
+        run: |
+          tar -xf source.tar
+
       - name: Get Python Package Version
         id: get_package_version
         run: |
@@ -95,6 +99,10 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: source
+
+      - name: Extracting from the Tar file
+        run: |
+          tar -xf source.tar
 
       - name: Install Build Module
         run: |
