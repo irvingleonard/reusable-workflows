@@ -41,7 +41,7 @@ jobs:
 
       - name: Extracting from the Tar file
         run: |
-          tar -xf source.tar --strip-components
+          tar -xf source.tar
 
       - name: Debugging
         run: |
