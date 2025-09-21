@@ -18,9 +18,9 @@ on:
         required: true
         type: string
     outputs:
-      built:
-        description: "If the package was built"
-        value: ${{ jobs.build-n-publish.outputs.built }}
+      result:
+        description: "Result of the workflow run"
+        value: ${{ jobs.build-n-publish.outputs.result }}
     secrets:
       github-token:
         required: true
@@ -137,5 +137,10 @@ jobs:
           name: build
           path: ./
 
+      - name: Set Result
+        id: final_result
+        run: |
+          echo "RESULT=built" >> $GITHUB_OUTPUT
+
     outputs:
-      built: done
+      result: ${{ steps.final_result.outputs.RESULT }}

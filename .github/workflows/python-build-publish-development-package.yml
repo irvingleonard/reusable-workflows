@@ -16,9 +16,9 @@ on:
         type: string
         default: Development
     outputs:
-      built:
-        description: "If the package was built"
-        value: ${{ jobs.development-package.outputs.built }}
+      result:
+        description: "Result of the workflow run"
+        value: ${{ jobs.development-package.outputs.result }}
     secrets:
       github-token:
         required: true
