@@ -25,6 +25,9 @@ on:
       github-token:
         required: true
 
+env:
+  STATUS_CHECK_NAME: Python Package Built
+
 jobs:
   prepare-source:
     uses: irvingleonard/reusable-workflows/.github/workflows/python-prepare-source.yml@v1
@@ -113,8 +116,22 @@ jobs:
           ./venv/bin/pip install --upgrade build
 
       - name: Build Package
+        id: build-package
         run: |
-          ./venv/bin/python3 -m build --no-isolation
+          ./venv/bin/python3 -m build --no-isolation && echo "RESULT=built" >> "$GITHUB_OUTPUT"
+
+      - name: Set Failure Status for Build
+        if: steps.build-package.outputs.RESULT != 'built'
+        uses: irvingleonard/github-actions-set-commit-status@master
+        with:
+          token: ${{ secrets.github-token }}
+          status: "failure"
+          description: "Build failed"
+          context: ${{ env.STATUS_CHECK_NAME }}
+
+      - name: Exit if Build Failed
+        if: steps.build-package.outputs.RESULT != 'built'
+        run: exit 1
 
       - name: Create Github Pre-Release
         if: inputs.stable-version != true
@@ -137,10 +154,5 @@ jobs:
           name: build
           path: ./
 
-      - name: Set Result
-        id: final_result
-        run: |
-          echo "RESULT=built" >> $GITHUB_OUTPUT
-
     outputs:
-      result: ${{ steps.final_result.outputs.RESULT }}
+      result: ${{ steps.build-package.outputs.RESULT }}
