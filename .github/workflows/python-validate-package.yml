@@ -39,8 +39,10 @@ jobs:
         with:
           name: source
 
-      - name: Display structure of downloaded files
-        run: ls -lR
+      - name: Debugging
+        run: |
+          ./venv/bin/python --version
+          ./venv/bin/python -m ${{ inputs.package-name }} --help
 
       - name: Get Python Package Version
         id: get_package_version
