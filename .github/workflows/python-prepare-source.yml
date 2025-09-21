@@ -31,8 +31,12 @@ jobs:
         run: |
           ./venv_devautotools/bin/python -m devautotools deploy_local_venv
 
+      - name: Putting all inside a Tar file
+        run: |
+          tar -cvf source.tar .
+
       - name: Store as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: source
-          path: ./
+          path: source.tar
