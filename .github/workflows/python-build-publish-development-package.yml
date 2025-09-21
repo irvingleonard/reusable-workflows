@@ -15,6 +15,10 @@ on:
         required: false
         type: string
         default: Development
+    outputs:
+      built:
+        description: "If the package was built"
+        value: ${{ jobs.development-package.outputs.built }}
     secrets:
       github-token:
         required: true

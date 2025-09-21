@@ -17,6 +17,10 @@ on:
       env-name:
         required: true
         type: string
+    outputs:
+      built:
+        description: "If the package was built"
+        value: ${{ jobs.build-n-publish.outputs.built }}
     secrets:
       github-token:
         required: true
@@ -132,3 +136,6 @@ jobs:
         with:
           name: build
           path: ./
+
+    outputs:
+      built: done
